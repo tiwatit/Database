@@ -57,8 +57,13 @@ namespace course_work
                 }
                 else if (entity==9)
                 {
-                    model.game_generation(1);
-                    Console.WriteLine(":");
+                    int game = 0;
+                    Int32.TryParse(view.get_num(), out game);
+                    model.game_generation(game);
+                }
+                else if (entity == 10)
+                {
+                    model.backup();
                 }
                 else
                 {

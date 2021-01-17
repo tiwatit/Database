@@ -448,18 +448,56 @@ namespace course_work
         #endregion
         public void backup()
         {
-            string sProcess = @"C:\windows\system32\cmd.exe";
-            string command = "C:/\"Program Files\"/PostgreSQL/12/bin/pg_dump.exe --file D:/DB/coursework.sql  --host localhost --port 5432 --username postgres --password --dbname asd --verbose D:\\DB\\coursework.sql\n";
-            string cmd = String.Format(" /k {0}{1}{2} x86", "\"", command, "\"");
-            Process.Start(sProcess, cmd);
+            String dumpCommand = "\"" + "C:\\Program Files\\PostgreSQL\\12\\bin\\pg_dump.exe" + "\"" + " -Fc" + " -h " + "localhost" + " -p " + 5432 + " -d " + "Course_work" + " -U " + "postgres" + "";
+            String passFileContent = "" + "localhost" + ":" + 5432 + ":" + "Course_work" + ":" + "postgres" + ":" + 1111 + "";
+
+            String batFilePath = Path.Combine(
+                Path.GetTempPath(),
+                Guid.NewGuid().ToString() + ".bat");
+
+            String passFilePath = Path.Combine(
+                Path.GetTempPath(),
+                Guid.NewGuid().ToString() + ".conf");
+
+            try
+            {
+                String batchContent = "";
+                batchContent += "@" + "set PGPASSFILE=" + passFilePath + "\n";
+                batchContent += "@" + dumpCommand + "  > " + "\"" + "D:\\DB\\coursework.sql" + "\"" + "\n";
+
+                File.WriteAllText(
+                    batFilePath,
+                    batchContent,
+                    Encoding.ASCII);
+
+                File.WriteAllText(
+                    passFilePath,
+                    passFileContent,
+                    Encoding.ASCII);
+
+                if (File.Exists("D:\\DB\\coursework.sql"))
+                    File.Delete("D:\\DB\\coursework.sql");
+
+                ProcessStartInfo oInfo = new ProcessStartInfo(batFilePath);
+                oInfo.UseShellExecute = false;
+                oInfo.CreateNoWindow = true;
+
+                using (Process proc = System.Diagnostics.Process.Start(oInfo))
+                {
+                    proc.WaitForExit();
+                    proc.Close();
+                }
+            }
+            finally
+            {
+                if (File.Exists(batFilePath))
+                    File.Delete(batFilePath);
+
+                if (File.Exists(passFilePath))
+                    File.Delete(passFilePath);
+            }
         }
-        public void restore()
-        {
-            string sProcess = @"C:\windows\system32\cmd.exe";
-            string command = "C:/\"Program Files\"/PostgreSQL/12/bin/pg_restore.exe -d coursework -U postgres -c D:/DB/coursework.sql";
-            string cmd = String.Format(" /k {0}{1}{2} x86", "\"", command, "\"");
-            Process.Start(sProcess, cmd);
-        }
+
         public void game_generation(int num)
         {
             using var cmd = new NpgsqlCommand("INSERT INTO \"games\" (\"name\", \"platform\", \"release_year\" ,\"genre\", \"publisher\",\"developer\",\"access_rating\") SELECT chr(trunc(65 + random()*25)::int) || chr(trunc(97 + random()*25)::int) , chr(trunc(65 + random()*25)::int) || chr(trunc(97 + random()*25)::int) , trunc(random() * 500 + 20),chr(trunc(65 + random()*25)::int) || chr(trunc(97 + random()*25)::int) ,chr(trunc(65 + random()*25)::int) || chr(trunc(97 + random()*25)::int) ,chr(trunc(65 + random()*25)::int) || chr(trunc(97 + random()*25)::int) ,chr(trunc(65 + random()*25)::int) || chr(trunc(97 + random()*25)::int)  FROM generate_series(1, @num)", db);
